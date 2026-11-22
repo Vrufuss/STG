@@ -264,8 +264,9 @@ ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
     toiletries.push(item('deodorant', 'Deodorant', null, travelNote));
     toiletries.push(item('shampoo', 'Shampoo and conditioner', null, short ? 'Travel-size, or use the hotel\'s' : 'Check the hotel first'));
     toiletries.push(item('body-wash', 'Body wash', null, travelNote));
-    toiletries.push(item('hair-items', 'Brush, comb or hair ties', null, null));
-    if (!short) toiletries.push(item('razor', 'Razor', null, null));
+    toiletries.push(item('hair-foam', 'Hair Foam', null, travelNote));
+    toiletries.push(item('razor', 'Razor', null, null));
+    toiletries.push(item('shaving-cream', 'Shaving cream', null, travelNote));
     if (w === 'hot' || swim) toiletries.push(item('sunscreen', 'SPF50+ sunscreen', null, 'Reapply every 2 hours'));
     if (w === 'cold') {
       toiletries.push(item('lip-balm', 'Lip balm', null, null));
