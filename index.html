@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Packer">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1030" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<title>Short Trip Packer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=Archivo+Narrow:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE everyday travel tool, quick and practical
+   IDEA an airline baggage tag: cobalt tag stock, punched hole, bold route-code lettering
+   PICTURE the checklist itself, grouped like tag sections, ticks in coral
+   COLOUR white ground, cobalt #1d3bd6 tag band, coral #ff5537 accent; night #0b1030
+   TYPE Archivo Narrow 700 for codes and headings + Archivo text
+   LAYOUT phone: tag band with controls, sticky progress, list. 900px+: sticky tag left, list right */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#0b1030);--ink:light-dark(#10153a,#eef0ff);--muted:light-dark(#5a6083,#a7add6);--tag:light-dark(#1d3bd6,#1a2a8f);--tagink:#ffffff;--tagsoft:light-dark(#3654e6,#2737a6);--line:light-dark(#e2e5f3,#232c63);--row:light-dark(#f5f6fc,#121a45);--acc:#ff5537;--accsoft:light-dark(#ffe3dc,#4a1f1c)}
+:root[data-theme=light]{color-scheme:light}
+:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 Archivo,system-ui,-apple-system,"Segoe UI",sans-serif;overflow-x:clip}
+button,input{font:inherit;color:inherit}
+body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto 0;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:20}
+.wrap{max-width:1240px;margin:0 auto;padding:0 max(16px,4vw,env(safe-area-inset-right,0px)) 0 max(16px,4vw,env(safe-area-inset-left,0px))}
+.app{display:grid;gap:20px;padding-block:20px 48px}
+@media(min-width:900px){.app{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:40px;align-items:start;padding-block:32px 64px}.side{position:sticky;top:24px}}
+.tag{position:relative;background:var(--tag);color:var(--tagink);border-radius:18px 18px 18px 18px;padding:22px 20px 20px;box-shadow:0 1px 0 rgba(0,0,0,.08)}
+.tag::before{content:"";position:absolute;top:18px;right:18px;width:18px;height:18px;border-radius:50%;background:var(--bg);box-shadow:inset 0 0 0 3px var(--tagsoft)}
+.code{font:700 13px/1 "Archivo Narrow",Archivo,sans-serif;letter-spacing:.04em;opacity:.8;margin:0 0 6px}
+h1{font:800 clamp(32px,8vw,44px)/1.05 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 18px;text-wrap:balance;padding-right:32px}
+.lbl{display:block;font:700 15px/1.2 "Archivo Narrow",Archivo,sans-serif;margin:16px 0 8px}
+.step{display:flex;align-items:center;gap:8px;background:var(--tagsoft);border-radius:14px;padding:6px;width:max-content}
+.step button{width:44px;height:44px;border:0;border-radius:10px;background:var(--tagink);color:var(--tag);cursor:pointer;display:grid;place-items:center}
+.step button:disabled{opacity:.4;cursor:default}
+.step output{min-width:5.2em;text-align:center;font:800 26px/1 Archivo,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.step output small{display:block;font:600 13px/1.2 Archivo,sans-serif;opacity:.85}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;background:var(--tagsoft);border-radius:14px;padding:6px}
+.seg button{border:0;border-radius:10px;background:transparent;color:var(--tagink);min-height:56px;padding:6px 4px;cursor:pointer;line-height:1.15}
+.seg button b{display:block;font:800 16px/1.1 Archivo,sans-serif}
+.seg button span{font-size:13px;opacity:.85;white-space:nowrap}
+.seg button[aria-pressed=true]{background:var(--tagink);color:var(--tag)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;border:2px solid rgba(255,255,255,.55);border-radius:999px;background:transparent;color:var(--tagink);padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:15px}
+.chip svg{width:14px;height:14px;display:none}
+.chip[aria-pressed=true]{background:var(--acc);border-color:var(--acc)}
+.chip[aria-pressed=true] svg{display:block}
+button:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.tagfoot{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px;padding-top:16px;border-top:2px dashed rgba(255,255,255,.35)}
+.btn{min-height:44px;border-radius:12px;border:0;padding:0 16px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn.light{background:var(--tagink);color:var(--tag)}
+.btn.ghost{background:transparent;color:var(--tagink);box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
+.manual{display:none;margin-top:12px}
+.manual.on{display:block}
+.manual textarea{width:100%;height:180px;border-radius:10px;border:0;padding:10px;font:14px/1.4 Archivo,sans-serif;background:var(--tagink);color:#10153a}
+.manual p{margin:0 0 6px;font-size:14px}
+.prog{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:10px 0 12px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center}
+.prog strong{font:800 18px/1.2 Archivo,sans-serif;font-variant-numeric:tabular-nums}
+.prog .sum{font-size:14px;color:var(--muted)}
+.meter{grid-column:1/-1;height:8px;border-radius:99px;background:var(--row);overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--acc);border-radius:99px;transition:width .3s ease}
+.reset{min-height:44px;border:0;background:transparent;color:var(--muted);font-weight:600;cursor:pointer;padding:0 6px;text-decoration:underline;text-underline-offset:3px}
+.reset:disabled{opacity:.45;cursor:default;text-decoration:none}
+.group{margin-top:22px}
+.group h2{font:700 20px/1.2 "Archivo Narrow",Archivo,sans-serif;margin:0 0 8px;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.group h2 span{font:600 14px/1 Archivo,sans-serif;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;background:var(--row);border-radius:12px;padding:10px 12px;min-height:56px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.item:hover{background:color-mix(in srgb,var(--row) 80%,var(--tag) 8%)}
+.box{width:26px;height:26px;border-radius:8px;border:2px solid var(--muted);display:grid;place-items:center;background:var(--bg)}
+.box svg{width:16px;height:16px;opacity:0;transform:scale(.4)}
+.item.on .box{background:var(--acc);border-color:var(--acc)}
+.item.on .box svg{opacity:1;transform:scale(1);transition:transform .22s cubic-bezier(.3,1.6,.5,1),opacity .15s}
+.nm{font-weight:600;overflow-wrap:anywhere}
+.note{display:block;font-size:13px;color:var(--muted);font-weight:400;margin-top:2px}
+.item.on .nm{text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--acc) 70%,transparent);text-decoration-thickness:2px;color:var(--muted)}
+.qty{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:700;color:var(--tag);text-align:right}
+:root[data-theme=dark] .qty{color:#aab8ff}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .qty{color:#aab8ff}}
+.x{width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+.x:hover{background:var(--accsoft);color:var(--acc)}
+.add{display:flex;gap:8px;margin-top:8px}
+.add input{flex:1;min-height:48px;border-radius:12px;border:2px solid var(--line);background:var(--bg);padding:0 14px;font-size:16px}
+.add button{min-height:48px;border:0;border-radius:12px;background:var(--tag);color:#fff;font-weight:700;padding:0 16px;cursor:pointer}
+.empty{color:var(--muted);font-size:14px;margin:4px 0 0}
+.err{background:var(--accsoft);border-radius:12px;padding:16px;margin-top:16px}
+.done{display:none;margin-top:14px;padding:14px 16px;border-radius:12px;background:var(--accsoft);font-weight:600}
+.done.on{display:block}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap app">
+  <aside class="side">
+    <section class="tag" aria-label="Trip details">
+      <h1>Short trip packer</h1>
+      <span class="lbl" id="nl">Nights away</span>
+      <div class="step" role="group" aria-labelledby="nl">
+        <button type="button" id="minus" aria-label="One less night"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M3 9h12" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+        <output id="nights" aria-live="polite">3<small>nights</small></output>
+        <button type="button" id="plus" aria-label="One more night"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M3 9h12M9 3v12" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+      </div>
+      <span class="lbl" id="wl">Weather</span>
+      <div class="seg" id="weather" role="group" aria-labelledby="wl">
+        <button type="button" data-w="hot" aria-pressed="false"><b>Hot</b><span>25°C+</span></button>
+        <button type="button" data-w="average" aria-pressed="true"><b>Mild</b><span>15 to 25°C</span></button>
+        <button type="button" data-w="cold" aria-pressed="false"><b>Cold</b><span>under 15°C</span></button>
+      </div>
+      <span class="lbl" id="ol">Also on this trip</span>
+      <div class="chips" id="opts" role="group" aria-labelledby="ol">
+        <button type="button" class="chip" data-o="laundry" aria-pressed="false"><svg viewBox="0 0 14 14"><path d="M2 7.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Laundry access</button>
+        <button type="button" class="chip" data-o="swim" aria-pressed="false"><svg viewBox="0 0 14 14"><path d="M2 7.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Swimming</button>
+        <button type="button" class="chip" data-o="active" aria-pressed="false"><svg viewBox="0 0 14 14"><path d="M2 7.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Active / gym</button>
+        <button type="button" class="chip" data-o="work" aria-pressed="false"><svg viewBox="0 0 14 14"><path d="M2 7.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Work</button>
+      </div>
+      <div class="tagfoot">
+        <button type="button" class="btn light" id="copy"><svg width="16" height="16" viewBox="0 0 16 16"><rect x="5" y="5" width="9" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 3H4a2 2 0 0 0-2 2v6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>Copy list</span></button>
+        <button type="button" class="btn ghost" id="clearAll">Start fresh</button>
+      </div>
+      <div class="manual" id="manual"><p>Copying was blocked here. Select the text below and copy it.</p><textarea id="manualText" readonly aria-label="Packing list text"></textarea></div>
+    </section>
+  </aside>
+  <main>
+    <div class="prog" id="prog">
+      <div><strong id="count">Packed 0 of 0</strong><div class="sum" id="sum">3 nights, mild weather</div></div>
+      <button type="button" class="reset" id="reset">Untick all</button>
+      <div class="meter" aria-hidden="true"><i id="bar"></i></div>
+    </div>
+    <div id="list"></div>
+    <div class="done" id="done">All packed. Have a great trip.</div>
+  </main>
+</div>
+<script>
+(function () {
+  'use strict';
+
+  var WEATHERS = ['hot', 'average', 'cold'];
+
+  function clampNights(n) {
+    n = parseInt(n, 10);
+    if (isNaN(n)) n = 3;
+    if (n < 1) n = 1;
+    if (n > 14) n = 14;
+    return n;
+  }
+
+  function item(id, name, qty, note) {
+    return {
+      id: id,
+      name: name,
+      qty: qty === undefined || qty === null ? null : String(qty),
+      note: note || null
+    };
+  }
+
+  function buildPackingList(nights, weather, opts) {
+    var n = clampNights(nights);
+    var w = WEATHERS.indexOf(weather) >= 0 ? weather : 'average';
+    opts = opts || {};
+    var laundry = !!opts.laundry;
+    var swim = !!opts.swim;
+    var active = !!opts.active;
+    var work = !!opts.work;
+    var short = n <= 2;
+    var long = n > 7;
+
+    var capNote = laundry ? 'Laundry access, so capped' : null;
+    var washNote = !laundry && long ? 'Long trip, plan a mid-trip wash' : null;
+
+    // Clothing counts
+    function capClothes(v, cap) {
+      return laundry ? Math.min(v, cap) : v;
+    }
+    var underwear = capClothes(n + 1, 5);
+    var socks = capClothes(n + 1, 5);
+    var tops = capClothes(w === 'hot' ? n + 1 : n, 4);
+    if (!laundry) tops = Math.min(tops, n + 1);
+    var bottoms = capClothes(Math.ceil(n / 2), 4);
+    var sleep = Math.max(1, Math.round(n / 3));
+    sleep = capClothes(sleep, 4);
+
+    // ---------- Clothes ----------
+    var clothes = [];
+    clothes.push(item('underwear', 'Underwear', underwear, capNote || washNote));
+    clothes.push(item(
+      'socks',
+      w === 'cold' ? 'Warm socks' : 'Socks',
+      socks + (socks === 1 ? ' pair' : ' pairs'),
+      w === 'hot' ? 'Thin or ankle socks' : capNote
+    ));
+    if (w === 'hot') {
+      clothes.push(item('tops', 'Light breathable tops', tops, 'Extra one for sweaty days'));
+      clothes.push(item('bottoms', 'Shorts', bottoms, capNote || 'Wear one on the plane'));
+      if (!short) clothes.push(item('long-pants', 'Light long pants', 1, 'For evenings or planes'));
+      clothes.push(item('hoodie', 'Hoodie', 1, 'For planes and cool nights'));
+    } else if (w === 'average') {
+      clothes.push(item('tops', 'Tops / T-shirts', tops, capNote));
+      clothes.push(item('bottoms', 'Jeans or long pants', bottoms, 'Wear one pair on the plane'));
+      clothes.push(item('jumper', 'Jumper', 1, null));
+      clothes.push(item('light-jacket', 'Light jacket', 1, 'Layer for cool mornings'));
+    } else {
+      var thermals = capClothes(Math.max(1, Math.ceil(n / 3)), 4);
+      clothes.push(item('thermals', 'Thermal base layers', thermals + (thermals === 1 ? ' set' : ' sets'), null));
+      clothes.push(item('tops', 'Long-sleeve tops', tops, capNote));
+      clothes.push(item('bottoms', 'Long pants or jeans', bottoms, 'Wear the warmest on the plane'));
+      clothes.push(item('jumper', 'Jumpers', short ? 1 : 2, null));
+      clothes.push(item('warm-coat', 'Warm coat', 1, 'Wear it to save bag space'));
+      clothes.push(item('beanie', 'Beanie', 1, null));
+      clothes.push(item('gloves', 'Gloves', '1 pair', null));
+      clothes.push(item('scarf', 'Scarf', 1, null));
+    }
+    clothes.push(item('sleepwear', 'Sleepwear', sleep, null));
+    if (!short) clothes.push(item('going-out', 'Going-out outfit', 1, 'One smarter option for dinner'));
+    if (swim) {
+      clothes.push(item('swimmers', 'Swimmers', n >= 4 ? 2 : 1, n >= 4 ? 'A second pair while one dries' : null));
+      clothes.push(item('rashie', 'Rashie or cover-up', 1, null));
+    }
+    if (active) {
+      var activeSets = capClothes(Math.max(1, Math.ceil(n / 3)), 3);
+      clothes.push(item('activewear', 'Activewear sets', activeSets, null));
+    }
+
+    // ---------- Work ----------
+    var workItems = [];
+    if (work) {
+      var outfits = capClothes(Math.min(n, 5), 4);
+      workItems.push(item('work-outfits', 'Work outfits', outfits, 'Mix and match to save space'));
+      workItems.push(item('laptop', 'Work laptop', null, null));
+      workItems.push(item('laptop-charger', 'Work laptop charger', null, null));
+      workItems.push(item('work-id', 'Lanyard / work ID', null, null));
+      workItems.push(item('notebook', 'Notebook and pen', null, null));
+    }
+
+    // ---------- Footwear ----------
+    var footwear = [];
+    if (w === 'hot') {
+      footwear.push(item('everyday-shoes', 'Comfortable walking shoes', '1 pair', 'Wear them on the plane'));
+      footwear.push(item('thongs', 'Thongs', '1 pair', null));
+    } else if (w === 'average') {
+      footwear.push(item('everyday-shoes', 'Comfortable walking shoes', '1 pair', 'Wear them on the plane'));
+      if (!short) footwear.push(item('thongs', 'Thongs', '1 pair', 'For showers and the beach'));
+    } else {
+      footwear.push(item('boots', 'Boots', '1 pair', 'Waterproof if you can'));
+      if (!short) footwear.push(item('everyday-shoes', 'Comfortable walking shoes', '1 pair', null));
+    }
+    if (!short && footwear.length < 3 && w !== 'cold') {
+      footwear.push(item('dress-shoes', 'Dressier shoes', '1 pair', 'Only if you have a dinner planned'));
+    }
+    if (active) footwear.push(item('runners', 'Runners', '1 pair', null));
+
+    // ---------- Toiletries ----------
+    var travelNote = short ? 'Travel-size is plenty' : null;
+    var toiletries = [];
+    toiletries.push(item('toothbrush', 'Toothbrush', null, null));
+    toiletries.push(item('toothpaste', 'Toothpaste', null, travelNote));
+    toiletries.push(item('deodorant', 'Deodorant', null, travelNote));
+    toiletries.push(item('shampoo', 'Shampoo and conditioner', null, short ? 'Travel-size, or use the hotel\'s' : 'Check the hotel first'));
+    toiletries.push(item('body-wash', 'Body wash', null, travelNote));
+    toiletries.push(item('hair-items', 'Brush, comb or hair ties', null, null));
+    if (!short) toiletries.push(item('razor', 'Razor', null, null));
+    if (w === 'hot' || swim) toiletries.push(item('sunscreen', 'SPF50+ sunscreen', null, 'Reapply every 2 hours'));
+    if (w === 'cold') {
+      toiletries.push(item('lip-balm', 'Lip balm', null, null));
+    }
+    toiletries.push(item('moisturiser', 'Moisturiser', null, w === 'cold' ? 'Cold air dries skin fast' : travelNote));
+    if (!short) toiletries.push(item('toiletry-bag', 'Toiletry bag', null, 'Clear bag for liquids if flying'));
+
+    // ---------- Health ----------
+    var health = [];
+    if (!short) health.push(item('first-aid', 'Band-aids and basic first aid', null, null));
+    health.push(item('restavit', 'Restavit', null, null));
+
+    // ---------- Tech ----------
+    var tech = [];
+    tech.push(item('phone-charger', 'Phone charger', null, null));
+    tech.push(item('power-brick', 'Power brick', null, null));
+    if (!short || work) tech.push(item('power-bank', 'Power bank', null, 'Carry-on only if flying'));
+    tech.push(item('headphones', 'Headphones', null, null));
+    tech.push(item('personal-laptop', 'Personal laptop', null, null));
+    tech.push(item('personal-laptop-charger', 'Personal laptop charger', null, null));
+    if (!short && !work) tech.push(item('power-adapter', 'Power adapter', null, 'If going overseas'));
+
+    // ---------- Documents & money ----------
+    var docs = [];
+    docs.push(item('id', 'Driver licence or ID', null, null));
+    docs.push(item('wallet', 'Wallet', null, null));
+    docs.push(item('bookings', 'Booking confirmations', null, 'Save offline on your phone'));
+    if (!short && !work) docs.push(item('passport', 'Passport', null, 'If going overseas'));
+    docs.push(item('keys', 'House keys', null, null));
+
+    // ---------- Extras ----------
+    var extras = [];
+    if (w === 'hot') {
+      extras.push(item('hat', 'Hat', null, 'Wide brim is best'));
+      extras.push(item('sunnies', 'Sunnies', null, null));
+    } else if (w === 'average') {
+      extras.push(item('umbrella', 'Compact umbrella', null, null));
+      if (!short) extras.push(item('sunnies', 'Sunnies', null, null));
+    } else {
+      if (!short) extras.push(item('umbrella', 'Compact umbrella', null, null));
+    }
+    if (!short) {
+      extras.push(item('water-bottle', 'Reusable water bottle', null, null));
+      extras.push(item('laundry-bag', 'Bag for dirty laundry', null, null));
+    } else if (active) {
+      extras.push(item('water-bottle', 'Reusable water bottle', null, null));
+    }
+    if (n >= 4) extras.push(item('day-bag', 'Day bag or tote', null, null));
+    if (swim) extras.push(item('beach-towel', 'Beach towel', null, 'Skip if the hotel provides one'));
+    if (long) extras.push(item('book', 'Book or e-reader', null, null));
+
+    var cats = [
+      { id: 'clothes', title: 'Clothes', items: clothes },
+      { id: 'work', title: 'Work', items: workItems },
+      { id: 'footwear', title: 'Footwear', items: footwear },
+      { id: 'toiletries', title: 'Toiletries', items: toiletries },
+      { id: 'health', title: 'Health', items: health },
+      { id: 'tech', title: 'Tech', items: tech },
+      { id: 'documents', title: 'Documents & money', items: docs },
+      { id: 'extras', title: 'Extras', items: extras }
+    ];
+
+    return cats.filter(function (c) { return c.items.length > 0; });
+  }
+
+  buildPackingList.weatherLabels = {
+    hot: 'Hot (25°C+)',
+    average: 'Mild (15–25°C)',
+    cold: 'Cold (under 15°C)'
+  };
+
+  window.buildPackingList = buildPackingList;
+})();
+</script>
+<script>
+{
+  const KEY = 'short-trip-packer-v1';
+  const W_NAMES = {hot:'hot', average:'mild', cold:'cold'};
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const tickSvg = '<svg viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const xSvg = '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+
+  const fresh = () => ({nights:3, weather:'average', opts:{laundry:false, swim:false, active:false, work:false}, ticks:{}, custom:[]});
+  let state = fresh();
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (saved && typeof saved === 'object') {
+      state = Object.assign(fresh(), saved);
+      state.opts = Object.assign(fresh().opts, saved.opts || {});
+      state.ticks = saved.ticks && typeof saved.ticks === 'object' ? saved.ticks : {};
+      state.custom = Array.isArray(saved.custom) ? saved.custom.filter(c => c && c.id && c.name) : [];
+      if (!(state.nights >= 1 && state.nights <= 14)) state.nights = 3;
+      if (!W_NAMES[state.weather]) state.weather = 'average';
+    }
+  } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+
+  let groups = [];
+  const labels = () => (window.buildPackingList && window.buildPackingList.weatherLabels) || {};
+
+  function compute() {
+    if (typeof window.buildPackingList !== 'function') return null;
+    try {
+      const g = window.buildPackingList(state.nights, state.weather, Object.assign({}, state.opts));
+      return Array.isArray(g) ? g : [];
+    } catch (e) { return null; }
+  }
+
+  function allGroups() {
+    const mine = {id:'mine', title:'My items', custom:true, items: state.custom.map(c => ({id:c.id, name:c.name, qty:null, note:null}))};
+    return groups.concat([mine]);
+  }
+
+  function itemRow(it, custom) {
+    const on = !!state.ticks[it.id];
+    return '<li class="item' + (on ? ' on' : '') + '" role="checkbox" tabindex="0" aria-checked="' + on + '" data-id="' + esc(it.id) + '">' +
+      '<span class="box">' + tickSvg + '</span>' +
+      '<span class="nm">' + esc(it.name) + (it.note ? '<span class="note">' + esc(it.note) + '</span>' : '') + '</span>' +
+      (custom ? '<button type="button" class="x" data-del="' + esc(it.id) + '" aria-label="Remove ' + esc(it.name) + '">' + xSvg + '</button>'
+              : '<span class="qty">' + esc(it.qty || '') + '</span>') +
+      '</li>';
+  }
+
+  function renderControls() {
+    $('nights').innerHTML = state.nights + '<small>' + (state.nights === 1 ? 'night' : 'nights') + '</small>';
+    $('minus').disabled = state.nights <= 1;
+    $('plus').disabled = state.nights >= 14;
+    document.querySelectorAll('#weather button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.w === state.weather)));
+    document.querySelectorAll('#opts .chip').forEach(b => b.setAttribute('aria-pressed', String(!!state.opts[b.dataset.o])));
+  }
+
+  function renderList() {
+    const g = compute();
+    if (g === null) {
+      groups = [];
+      $('list').innerHTML = '<div class="err"><strong>The packing list could not load.</strong><br>Try refreshing the page. Your own items are still saved.</div>';
+    } else {
+      groups = g;
+      $('list').innerHTML = allGroups().map(gr => {
+        const n = gr.items.length, p = gr.items.filter(i => state.ticks[i.id]).length;
+        const body = gr.items.length ? '<ul>' + gr.items.map(i => itemRow(i, gr.custom)).join('') + '</ul>'
+          : (gr.custom ? '<p class="empty">Anything else? Medication, a book, gifts.</p>' : '');
+        const add = gr.custom ? '<form class="add" id="addForm"><input id="addInput" type="text" maxlength="60" placeholder="Add your own item" aria-label="Add your own item" autocomplete="off"><button type="submit">Add</button></form>' : '';
+        return '<section class="group"><h2>' + esc(gr.title) + (n ? '<span>' + p + '/' + n + '</span>' : '') + '</h2>' + body + add + '</section>';
+      }).join('');
+    }
+    renderProgress();
+  }
+
+  function renderProgress() {
+    const items = allGroups().flatMap(g => g.items);
+    const total = items.length, packed = items.filter(i => state.ticks[i.id]).length;
+    $('count').textContent = 'Packed ' + packed + ' of ' + total;
+    const wl = labels()[state.weather];
+    $('sum').textContent = state.nights + (state.nights === 1 ? ' night, ' : ' nights, ') + (wl ? wl.charAt(0).toLowerCase() + wl.slice(1) : W_NAMES[state.weather] + ' weather');
+    $('bar').style.width = total ? (packed / total * 100) + '%' : '0';
+    $('reset').disabled = packed === 0;
+    $('done').classList.toggle('on', total > 0 && packed === total);
+    document.querySelectorAll('.group').forEach((sec, i) => {
+      const gr = allGroups()[i]; const sp = sec.querySelector('h2 span');
+      if (gr && sp) sp.textContent = gr.items.filter(x => state.ticks[x.id]).length + '/' + gr.items.length;
+    });
+  }
+
+  function update() { renderControls(); renderList(); save(); }
+
+  function toggle(li) {
+    const id = li.dataset.id;
+    if (state.ticks[id]) delete state.ticks[id]; else state.ticks[id] = true;
+    const on = !!state.ticks[id];
+    li.classList.toggle('on', on);
+    li.setAttribute('aria-checked', String(on));
+    renderProgress(); save();
+  }
+
+  function asText() {
+    const wl = labels()[state.weather] || W_NAMES[state.weather];
+    const head = 'Packing list: ' + state.nights + (state.nights === 1 ? ' night, ' : ' nights, ') + wl;
+    const body = allGroups().filter(g => g.items.length).map(g => g.title + '\n' + g.items.map(i =>
+      (state.ticks[i.id] ? '[x] ' : '[ ] ') + i.name + (i.qty ? ' (' + i.qty + ')' : '')).join('\n')).join('\n\n');
+    return head + '\n\n' + body;
+  }
+
+  $('minus').addEventListener('click', () => { if (state.nights > 1) { state.nights--; update(); } });
+  $('plus').addEventListener('click', () => { if (state.nights < 14) { state.nights++; update(); } });
+  $('weather').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { state.weather = b.dataset.w; update(); } });
+  $('opts').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) { state.opts[b.dataset.o] = !state.opts[b.dataset.o]; update(); } });
+  $('reset').addEventListener('click', () => {
+    allGroups().forEach(g => g.items.forEach(i => { delete state.ticks[i.id]; }));
+    renderList(); save();
+  });
+  $('clearAll').addEventListener('click', () => { state = fresh(); $('manual').classList.remove('on'); update(); });
+
+  $('list').addEventListener('click', e => {
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      e.stopPropagation();
+      const id = del.dataset.del;
+      state.custom = state.custom.filter(c => c.id !== id); delete state.ticks[id];
+      renderList(); save(); return;
+    }
+    const li = e.target.closest('.item'); if (li) toggle(li);
+  });
+  $('list').addEventListener('keydown', e => {
+    const li = e.target.closest('.item');
+    if (li && e.target === li && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); toggle(li); }
+  });
+  $('list').addEventListener('submit', e => {
+    if (e.target.id !== 'addForm') return;
+    e.preventDefault();
+    const name = $('addInput').value.trim();
+    if (!name) return;
+    state.custom.push({id:'my-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name});
+    renderList(); save();
+    const inp = $('addInput'); if (inp) inp.focus();
+  });
+
+  $('copy').addEventListener('click', async () => {
+    const txt = asText(), lab = $('copy').querySelector('span');
+    try {
+      if (!navigator.clipboard) throw new Error('no clipboard');
+      await navigator.clipboard.writeText(txt);
+      $('manual').classList.remove('on');
+      lab.textContent = 'Copied';
+      setTimeout(() => { lab.textContent = 'Copy list'; }, 1800);
+    } catch (err) {
+      $('manualText').value = txt;
+      $('manual').classList.add('on');
+      $('manualText').select();
+    }
+  });
+
+  update();
+}
+</script>
+</body>
+</html>
